@@ -9,7 +9,7 @@
 ANexusGuardianItem::ANexusGuardianItem()
 {
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
-    CollisionComp->InitSphereRadius(200.0f);
+    CollisionComp->InitSphereRadius(600.0f);
     CollisionComp->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
     RootComponent = CollisionComp;
 
@@ -27,7 +27,14 @@ ANexusGuardianItem::ANexusGuardianItem()
 void ANexusGuardianItem::BeginPlay()
 {
 	Super::BeginPlay();
-	
+    if (CollisionComp)
+    {
+        CollisionComp->OnComponentBeginOverlap.RemoveDynamic(this, &ANexusGuardianItem::OnOverlapBegin);
+        CollisionComp->OnComponentBeginOverlap.AddDynamic(this, &ANexusGuardianItem::OnOverlapBegin);
+
+        CollisionComp->OnComponentEndOverlap.RemoveDynamic(this, &ANexusGuardianItem::OnOverlapEnd);
+        CollisionComp->OnComponentEndOverlap.AddDynamic(this, &ANexusGuardianItem::OnOverlapEnd);
+    }
 }
 
 void ANexusGuardianItem::ApplyRandomEffect(ANexusGuardianCharacter* Player)
@@ -83,4 +90,28 @@ void ANexusGuardianItem::RespawnItem()
 {
     SetActorHiddenInGame(false);
     SetActorEnableCollision(true);
+}
+void ANexusGuardianItem::PlayFadeInAnim()
+{
+    ReceivePlayFadeIn();
+}
+
+void ANexusGuardianItem::PlayFadeOutAnim()
+{
+    ReceivePlayFadeOut();
+}
+void ANexusGuardianItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    if (Cast<ANexusGuardianCharacter>(OtherActor))
+    {
+        PlayFadeInAnim();
+    }
+}
+
+void ANexusGuardianItem::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+    if (Cast<ANexusGuardianCharacter>(OtherActor))
+    {
+        PlayFadeOutAnim();
+    }
 }

@@ -3,9 +3,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "NexusActor.h"
 #include "NexusGuardianEnemy.h"
+#include "NexusExplosion.h"
 #include "NexusGuardianHUD.h"
 #include "Blueprint/UserWidget.h"
 #include "NexusGuardianItem.h"
+#include "NexusSpikeTrap.h"
 #include "MonsterSpawner.h"
 #include "Sound/SoundBase.h"
 #include "Particles/ParticleSystem.h"
@@ -61,6 +63,7 @@ bool ANexusGuardianGameMode::IsBossWave() const
 }
 void ANexusGuardianGameMode::StartWave()
 {
+
     TArray<AActor*> OldEnemies;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANexusGuardianEnemy::StaticClass(), OldEnemies);
     for (AActor* Enemy : OldEnemies)
@@ -114,6 +117,57 @@ void ANexusGuardianGameMode::StartWave()
             }
         }
     }
+    TArray<AActor*> AllTraps;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANexusSpikeTrap::StaticClass(), AllTraps);
+    for (AActor* T : AllTraps) Cast<ANexusSpikeTrap>(T)->SetTrapActive(false);
+    ANexusGuardianHUD* MyHUD = nullptr;
+    if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+    {
+        MyHUD = Cast<ANexusGuardianHUD>(PC->GetHUD());
+    }
+    if (CurrentStageIndex >= 1)
+    {
+        for (AActor* T : AllTraps) Cast<ANexusSpikeTrap>(T)->SetTrapActive(true);
+
+        if (CurrentWaveIndex == 0 && MyHUD)
+        {
+            MyHUD->ShowGlobalWarning(TEXT("스테이지 2: 함정이 활성화되었습니다!"));
+        }
+    }
+    if (CurrentStageIndex >= 2)
+    {
+        if (!GetWorldTimerManager().IsTimerActive(ExplosionSpawnTimerHandle))
+        {
+            GetWorldTimerManager().SetTimer(ExplosionSpawnTimerHandle, this, &ANexusGuardianGameMode::SpawnRandomExplosion, 3.0f, true);
+        }
+
+        if (CurrentWaveIndex == 0 && MyHUD)
+        {
+            MyHUD->ShowGlobalWarning(TEXT("스테이지 3: 지뢰 구역에 진입했습니다!"));
+        }
+    }
+    else
+    {
+        // 스테이지 3 미만이면 타이머를 확실히 제거
+        GetWorldTimerManager().ClearTimer(ExplosionSpawnTimerHandle);
+    }
+    if (MyHUD)
+    {
+        FString WarningMsg = FString::Printf(TEXT("Stage %d - Wave %d 시작!"), CurrentStageIndex + 1, CurrentWaveIndex + 1);
+        MyHUD->ShowGlobalWarning(WarningMsg);
+    }
+}
+void ANexusGuardianGameMode::SpawnRandomExplosion()
+{
+    AActor* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+
+    if (!Player || !ExplosionClass) return;
+
+    FVector RandomOffset = FMath::VRand() * FMath::FRandRange(200.f, 600.f);
+    RandomOffset.Z = 0;
+    FVector SpawnLocation = Player->GetActorLocation() + RandomOffset;
+
+    GetWorld()->SpawnActor<ANexusExplosion>(ExplosionClass, SpawnLocation, FRotator::ZeroRotator);
 }
 
 void ANexusGuardianGameMode::OnNexusDestroyed()

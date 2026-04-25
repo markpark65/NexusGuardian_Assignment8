@@ -58,6 +58,13 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameData")
     TArray<FStageConfig> Stages;
 
+    UPROPERTY(EditAnywhere, Category = "Stages|Mechanics")
+    TSubclassOf<class ANexusExplosion> ExplosionClass;
+
+    FTimerHandle ExplosionSpawnTimerHandle;
+
+    void SpawnRandomExplosion();
+
     int32 CurrentStageIndex;
     int32 CurrentWaveIndex;
 

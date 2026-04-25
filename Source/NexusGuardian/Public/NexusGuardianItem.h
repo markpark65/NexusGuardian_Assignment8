@@ -25,6 +25,17 @@ public:
     void ApplyRandomEffect(class ANexusGuardianCharacter* Player);
     void RespawnItem();
 
+    UFUNCTION()
+    void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+    UFUNCTION()
+    void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void PlayFadeInAnim();
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void PlayFadeOutAnim();
 protected:
     virtual void BeginPlay() override;
 
@@ -34,9 +45,15 @@ protected:
     UPROPERTY(VisibleAnywhere, Category = "Components")
     class UStaticMeshComponent* ItemMesh;
 
-    UPROPERTY(VisibleAnywhere, Category = "Components")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     class UWidgetComponent* OverHeadWidget;
 
     UPROPERTY(EditAnywhere, Category = "ItemSettings")
     float Duration = 5.0f;
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "UI")
+    void ReceivePlayFadeIn();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "UI")
+    void ReceivePlayFadeOut();
 };
